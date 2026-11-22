@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#f4f7f7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="二次会出欠">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>二次会 出欠ダッシュボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Shippori+Mincho:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2f3a3e;--soft:#56666b;--muted:#7d8b8f;--line:#dde5e6;--gold:#a58a5c;--accent:#647c82;--ok:#4f7a6a;--no:#9a6a62;--bg:#f4f7f7;--card:rgba(255,255,255,.82);--serif:"Cormorant Garamond",serif;--mincho:"Shippori Mincho",serif}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:radial-gradient(circle at 90% 0,#e9f1f3,transparent 45%),radial-gradient(circle at 0 70%,#fbf6ee,transparent 45%),var(--bg);color:var(--ink);font:15px/1.7 var(--mincho);min-height:100vh}
+.wrap{max-width:480px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:6px 0 16px}
+.brand small{display:block;color:var(--gold);font-size:10px;letter-spacing:.2em}
+.brand h1{margin:0;font:italic 500 28px/1.1 var(--serif)}
+.refresh{flex:none;display:flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--accent);font:600 12px var(--mincho)}
+.refresh.spin svg{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.meta{margin:-8px 0 14px;color:var(--muted);font-size:11px}
+.card{background:var(--card);border:1px solid #fff;border-radius:16px;box-shadow:0 8px 26px rgba(110,135,140,.1);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);padding:16px}
+.hero{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-bottom:10px}
+.big .label{font-size:12px;color:var(--soft)}
+.big .num{font:500 64px/1 var(--serif);color:var(--ok)}
+.big .num span{font:600 14px var(--mincho);color:var(--soft);margin-left:4px}
+.big .sub{font-size:11px;color:var(--muted)}
+.stack{display:grid;gap:10px}
+.mini .label{font-size:11px;color:var(--soft)}
+.mini .num{font:500 30px/1.1 var(--serif)}
+.mini .num span{font:600 11px var(--mincho);color:var(--soft);margin-left:3px}
+.mini.no .num{color:var(--no)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.fee .num{font:500 26px/1.2 var(--serif);color:var(--gold)}
+.deadline .num{font:500 26px/1.2 var(--serif)}
+.sec-title{display:flex;justify-content:space-between;align-items:baseline;margin:22px 2px 8px}
+.sec-title h2{margin:0;font:600 15px var(--mincho)}
+.sec-title span{color:var(--muted);font-size:11px}
+.split-row{display:grid;grid-template-columns:56px 1fr 64px;align-items:center;gap:8px;margin:6px 0;font-size:12px}
+.bar{height:10px;border-radius:99px;background:#edf2f2;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}.bar .a{background:var(--ok)}.bar .b{background:#d9b9b2}
+.split-row b{text-align:right;font-weight:600}
+.legend{display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--muted)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:1px}
+.filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.filters::-webkit-scrollbar{display:none}
+.chip{flex:none;min-height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--soft);font:600 12px var(--mincho)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.search{width:100%;margin:8px 0 10px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font:16px var(--mincho)}
+.list{display:grid;gap:8px}
+.guest{padding:12px 14px}
+.guest .top{display:flex;align-items:center;gap:8px}
+.guest .name{font-weight:600;font-size:15px}
+.guest .kana{color:var(--muted);font-size:11px}
+.badge{flex:none;margin-left:auto;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600}
+.badge.ok{background:#e3efe9;color:#3c6656}.badge.no{background:#f4e7e4;color:#86554d}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:11px;color:var(--soft)}
+.tag{padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:#fff}
+.tag.alg{border-color:#e7c9a9;background:#fcf5ec;color:#86602c}
+.msg{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:#f5f8f8;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
+.time{margin-top:6px;color:var(--muted);font-size:10px}
+.alg-item{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13px}.alg-item:first-child{border-top:0}
+.alg-item b{font-weight:600}.alg-item span{color:#86602c;text-align:right}
+.empty{padding:22px 10px;color:var(--muted);text-align:center;font-size:13px}
+.err{margin-bottom:10px;padding:12px 14px;border-radius:12px;background:#f8ecea;color:#86554d;font-size:13px}
+.keybox{margin-top:40px}.keybox p{font-size:13px;color:var(--soft)}
+.keybox input{width:100%;min-height:48px;margin:8px 0;padding:0 12px;border:1px solid var(--line);border-radius:12px;font:16px monospace}
+.keybox button{width:100%;min-height:48px;border:0;border-radius:12px;background:var(--accent);color:#fff;font:600 14px var(--mincho)}
+.links{margin-top:22px;text-align:center;font-size:12px}.links a{color:var(--accent)}
+.skeleton .num{color:transparent!important;background:#eef3f3;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header>
+    <div class="brand"><small>TEPPEI &amp; RIHO · AFTER PARTY</small><h1>RSVP dashboard</h1></div>
+    <button class="refresh" id="refresh" type="button" aria-label="最新の状態に更新">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>更新
+    </button>
+  </header>
+  <p class="meta" id="meta">読み込み中…</p>
+  <div id="error" class="err" hidden></div>
+
+  <section class="hero" aria-label="出欠のまとめ">
+    <div class="card big skeleton" id="kpi-attend"><div class="label">出席</div><div class="num">0<span>名</span></div><div class="sub" id="kpi-rate">—</div></div>
+    <div class="stack">
+      <div class="card mini no skeleton" id="kpi-absent"><div class="label">欠席</div><div class="num">0<span>名</span></div></div>
+      <div class="card mini skeleton" id="kpi-total"><div class="label">回答数</div><div class="num">0<span>件</span></div></div>
+    </div>
+  </section>
+  <section class="grid2">
+    <div class="card mini fee skeleton" id="kpi-fee"><div class="label">会費の見込み</div><div class="num">¥0</div></div>
+    <div class="card mini deadline" id="kpi-deadline"><div class="label">返信期限 12/13 まで</div><div class="num">—</div></div>
+  </section>
+
+  <div class="sec-title"><h2>新郎側・新婦側</h2><span>出席 / 欠席</span></div>
+  <div class="card" id="split"></div>
+
+  <div class="sec-title"><h2>アレルギー（出席者）</h2><span id="alg-count"></span></div>
+  <div class="card" id="allergies"></div>
+
+  <div class="sec-title"><h2>回答一覧</h2><span id="list-count"></span></div>
+  <div class="filters" role="group" aria-label="絞り込み">
+    <button class="chip" data-f="all" aria-pressed="true">すべて</button>
+    <button class="chip" data-f="出席" aria-pressed="false">出席</button>
+    <button class="chip" data-f="欠席" aria-pressed="false">欠席</button>
+    <button class="chip" data-f="新郎側" aria-pressed="false">新郎側</button>
+    <button class="chip" data-f="新婦側" aria-pressed="false">新婦側</button>
+    <button class="chip" data-f="msg" aria-pressed="false">メッセージあり</button>
+  </div>
+  <input class="search" id="search" type="search" placeholder="名前・ふりがなで検索" autocomplete="off">
+  <div class="list" id="list"></div>
+
+  <p class="links"><a href="../" target="_blank" rel="noopener">招待状を開く</a></p>
+</div>
+
+<div class="wrap keybox" id="keybox" hidden>
+  <div class="brand"><small>TEPPEI &amp; RIHO · AFTER PARTY</small><h1>RSVP dashboard</h1></div>
+  <p>この画面を見るには合言葉が必要です。共有されたURLから開くか、合言葉を入力してください。</p>
+  <input id="keyinput" type="password" autocomplete="off" aria-label="合言葉">
+  <button id="keysave" type="button">開く</button>
+</div>
+
+<script>
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbw-0rzzmrKLfz5dLbtM5t4QFa1RXsMNIkUI10S3l9srWN-81bIPs1nqdWJmN1I1lGgi/exec';
+const DEADLINE = new Date('2026-12-13T23:59:59+09:00');
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} } };
+
+function getKey(){
+  const h = new URLSearchParams(location.hash.slice(1)).get('k');
+  if (h) { store.set('rsvpKey', h); return h; }
+  return store.get('rsvpKey');
+}
+let KEY = getKey();
+let rows = [], filter = 'all', query = '';
+
+function setNum(id, html){ const el = $(id); el.classList.remove('skeleton'); el.querySelector('.num').innerHTML = html; }
+
+function render(){
+  const att = rows.filter(r => r.attendance === '出席');
+  const abs = rows.filter(r => r.attendance === '欠席');
+  setNum('#kpi-attend', `${att.length}<span>名</span>`);
+  $('#kpi-rate').textContent = rows.length ? `出席率 ${Math.round(att.length / rows.length * 100)}%` : 'まだ回答はありません';
+  setNum('#kpi-absent', `${abs.length}<span>名</span>`);
+  setNum('#kpi-total', `${rows.length}<span>件</span>`);
+  setNum('#kpi-fee', `¥${(att.length * FEE).toLocaleString('ja-JP')}`);
+
+  const days = Math.ceil((DEADLINE - new Date()) / 86400000);
+  $('#kpi-deadline .num').innerHTML = days >= 0 ? `あと ${days}<span style="font:600 11px var(--mincho);color:var(--soft);margin-left:3px">日</span>` : '締切済み';
+
+  const max = Math.max(1, ...['新郎側','新婦側'].map(s => rows.filter(r => r.side === s).length));
+  $('#split').innerHTML = ['新郎側','新婦側'].map(s => {
+    const a = rows.filter(r => r.side === s && r.attendance === '出席').length;
+    const b = rows.filter(r => r.side === s && r.attendance === '欠席').length;
+    return `<div class="split-row"><span>${s}</span><div class="bar"><i class="a" style="width:${a/max*100}%"></i><i class="b" style="width:${b/max*100}%"></i></div><b>${a} / ${b}</b></div>`;
+  }).join('') + '<div class="legend"><span><i style="background:var(--ok)"></i>出席</span><span><i style="background:#d9b9b2"></i>欠席</span></div>';
+
+  const alg = att.filter(r => r.allergy === 'あり');
+  $('#alg-count').textContent = `${alg.length}名`;
+  $('#allergies').innerHTML = alg.length
+    ? alg.map(r => `<div class="alg-item"><b>${esc(r.name)}<small style="color:var(--muted);font-weight:400"> ${esc(r.side)}</small></b><span>${esc(r.allergyDetail || '（内容未記入）')}</span></div>`).join('')
+    : '<div class="empty" style="padding:6px">アレルギーのある出席者はいません</div>';
+
+  const q = query.trim().toLowerCase();
+  const list = rows.filter(r =>
+    (filter === 'all' || r.attendance === filter || r.side === filter || (filter === 'msg' && r.message)) &&
+    (!q || (r.name + r.kana).toLowerCase().includes(q))
+  ).slice().reverse();
+  $('#list-count').textContent = `${list.length}件`;
+  $('#list').innerHTML = list.length ? list.map(r => `
+    <article class="card guest">
+      <div class="top"><div><div class="name">${esc(r.name)}</div><div class="kana">${esc(r.kana)}</div></div>
+        <span class="badge ${r.attendance === '出席' ? 'ok' : 'no'}">${esc(r.attendance)}</span></div>
+      <div class="tags"><span class="tag">${esc(r.side)}</span>${r.allergy === 'あり' ? `<span class="tag alg">アレルギー：${esc(r.allergyDetail)}</span>` : ''}</div>
+      ${r.message ? `<p class="msg">${esc(r.message)}</p>` : ''}
+      <div class="time">${esc(r.at)} 回答</div>
+    </article>`).join('') : `<div class="card empty">${rows.length ? '該当する回答はありません' : 'まだ回答はありません。届くとここに表示されます。'}</div>`;
+}
+
+let FEE = 8000, loading = false;
+async function load(){
+  if (!KEY || loading) return;
+  loading = true; $('#refresh').classList.add('spin');
+  try {
+    const res = await fetch(`${ENDPOINT}?key=${encodeURIComponent(KEY)}&t=${Date.now()}`, { cache: 'no-store' });
+    const text = await res.text();
+    let data; try { data = JSON.parse(text); } catch(e) { data = null; }
+    if (!data || !data.ok) {
+      $('#error').textContent = '合言葉が違うか、データを読み込めませんでした。共有されたURLから開き直してください。';
+      $('#error').hidden = false; return;
+    }
+    $('#error').hidden = true;
+    FEE = data.fee || FEE; rows = data.rows || [];
+    store.set('rsvpCache', JSON.stringify(data));
+    $('#meta').textContent = `最終更新 ${data.updatedAt}（自動で1分ごとに更新）`;
+    render();
+  } catch (e) {
+    $('#error').textContent = '通信できませんでした。電波の良い場所で「更新」を押してください。';
+    $('#error').hidden = false;
+  } finally { loading = false; $('#refresh').classList.remove('spin'); }
+}
+
+document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+  filter = b.dataset.f;
+  document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c === b)));
+  render();
+}));
+$('#search').addEventListener('input', e => { query = e.target.value; render(); });
+$('#refresh').addEventListener('click', load);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+setInterval(() => { if (!document.hidden) load(); }, 60000);
+
+$('#keysave').addEventListener('click', () => {
+  const v = $('#keyinput').value.trim(); if (!v) return;
+  KEY = v; store.set('rsvpKey', v); $('#keybox').hidden = true; $('#app').hidden = false; load();
+});
+
+if (!KEY) { $('#app').hidden = true; $('#keybox').hidden = false; }
+else {
+  const cache = store.get('rsvpCache');
+  if (cache) { try { const d = JSON.parse(cache); rows = d.rows || []; FEE = d.fee || FEE; $('#meta').textContent = `前回 ${d.updatedAt} の内容を表示中…`; render(); } catch(e){} }
+  load();
+}
+</script>
+</body>
+</html>

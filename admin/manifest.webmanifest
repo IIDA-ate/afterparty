@@ -1,0 +1,11 @@
+{
+  "name": "二次会 出欠ダッシュボード",
+  "short_name": "二次会出欠",
+  "display": "standalone",
+  "background_color": "#f4f7f7",
+  "theme_color": "#f4f7f7",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
