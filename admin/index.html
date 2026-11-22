@@ -114,7 +114,6 @@ header{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;
     <button class="chip" data-f="欠席" aria-pressed="false">欠席</button>
     <button class="chip" data-f="新郎側" aria-pressed="false">新郎側</button>
     <button class="chip" data-f="新婦側" aria-pressed="false">新婦側</button>
-    <button class="chip" data-f="msg" aria-pressed="false">メッセージあり</button>
   </div>
   <input class="search" id="search" type="search" placeholder="名前・ふりがなで検索" autocomplete="off">
   <div class="list" id="list"></div>
@@ -173,7 +172,7 @@ function render(){
 
   const q = query.trim().toLowerCase();
   const list = rows.filter(r =>
-    (filter === 'all' || r.attendance === filter || r.side === filter || (filter === 'msg' && r.message)) &&
+    (filter === 'all' || r.attendance === filter || r.side === filter) &&
     (!q || (r.name + r.kana).toLowerCase().includes(q))
   ).slice().reverse();
   $('#list-count').textContent = `${list.length}件`;
@@ -182,7 +181,6 @@ function render(){
       <div class="top"><div><div class="name">${esc(r.name)}</div><div class="kana">${esc(r.kana)}</div></div>
         <span class="badge ${r.attendance === '出席' ? 'ok' : 'no'}">${esc(r.attendance)}</span></div>
       <div class="tags"><span class="tag">${esc(r.side)}</span>${r.allergy === 'あり' ? `<span class="tag alg">アレルギー：${esc(r.allergyDetail)}</span>` : ''}</div>
-      ${r.message ? `<p class="msg">${esc(r.message)}</p>` : ''}
       <div class="time">${esc(r.at)} 回答</div>
     </article>`).join('') : `<div class="card empty">${rows.length ? '該当する回答はありません' : 'まだ回答はありません。届くとここに表示されます。'}</div>`;
 }
