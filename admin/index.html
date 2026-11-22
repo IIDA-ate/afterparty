@@ -136,9 +136,18 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} } };
 
 function getKey(){
-  const h = new URLSearchParams(location.hash.slice(1)).get('k');
-  if (h) { store.set('rsvpKey', h); return h; }
+  const fromUrl = new URLSearchParams(location.hash.slice(1)).get('k') || new URLSearchParams(location.search).get('k');
+  if (fromUrl) { store.set('rsvpKey', fromUrl); return fromUrl; }
   return store.get('rsvpKey');
+}
+function clearKeyFromUrl(){
+  try { history.replaceState(null, '', location.pathname); } catch(e){}
+}
+function cacheName(){ return 'rsvpCache:' + KEY; }
+function showKeybox(msg){
+  rows = [];
+  $('#app').hidden = true; $('#keybox').hidden = false;
+  if (msg) $('#keybox p').textContent = msg;
 }
 let KEY = getKey();
 let rows = [], filter = 'all', query = '';
@@ -154,8 +163,9 @@ function render(){
   setNum('#kpi-total', `${rows.length}<span>件</span>`);
   setNum('#kpi-fee', `¥${(att.length * FEE).toLocaleString('ja-JP')}`);
 
-  const days = Math.ceil((DEADLINE - new Date()) / 86400000);
-  $('#kpi-deadline .num').innerHTML = days >= 0 ? `あと ${days}<span style="font:600 11px var(--mincho);color:var(--soft);margin-left:3px">日</span>` : '締切済み';
+  const now = new Date();
+  const days = Math.ceil((DEADLINE - now) / 86400000);
+  $('#kpi-deadline .num').innerHTML = now <= DEADLINE ? `あと ${days}<span style="font:600 11px var(--mincho);color:var(--soft);margin-left:3px">日</span>` : '締切済み';
 
   const max = Math.max(1, ...['新郎側','新婦側'].map(s => rows.filter(r => r.side === s).length));
   $('#split').innerHTML = ['新郎側','新婦側'].map(s => {
@@ -193,13 +203,20 @@ async function load(){
     const res = await fetch(`${ENDPOINT}?key=${encodeURIComponent(KEY)}&t=${Date.now()}`, { cache: 'no-store' });
     const text = await res.text();
     let data; try { data = JSON.parse(text); } catch(e) { data = null; }
+    if (data && data.error === 'unauthorized') {
+      try { localStorage.removeItem('rsvpKey'); localStorage.removeItem(cacheName()); } catch(e){}
+      KEY = null;
+      clearKeyFromUrl();
+      showKeybox('合言葉が違います。共有されたURLから開き直すか、正しい合言葉を入力してください。');
+      return;
+    }
     if (!data || !data.ok) {
-      $('#error').textContent = '合言葉が違うか、データを読み込めませんでした。共有されたURLから開き直してください。';
+      $('#error').textContent = 'データを読み込めませんでした。少し待ってから「更新」を押してください。';
       $('#error').hidden = false; return;
     }
     $('#error').hidden = true;
     FEE = data.fee || FEE; rows = data.rows || [];
-    store.set('rsvpCache', JSON.stringify(data));
+    store.set(cacheName(), JSON.stringify(data));
     $('#meta').textContent = `最終更新 ${data.updatedAt}（自動で1分ごとに更新）`;
     render();
   } catch (e) {
@@ -220,12 +237,12 @@ setInterval(() => { if (!document.hidden) load(); }, 60000);
 
 $('#keysave').addEventListener('click', () => {
   const v = $('#keyinput').value.trim(); if (!v) return;
-  KEY = v; store.set('rsvpKey', v); $('#keybox').hidden = true; $('#app').hidden = false; load();
+  KEY = v; store.set('rsvpKey', v); clearKeyFromUrl(); $('#keybox').hidden = true; $('#app').hidden = false; render(); load();
 });
 
 if (!KEY) { $('#app').hidden = true; $('#keybox').hidden = false; }
 else {
-  const cache = store.get('rsvpCache');
+  const cache = store.get(cacheName());
   if (cache) { try { const d = JSON.parse(cache); rows = d.rows || []; FEE = d.fee || FEE; $('#meta').textContent = `前回 ${d.updatedAt} の内容を表示中…`; render(); } catch(e){} }
   load();
 }

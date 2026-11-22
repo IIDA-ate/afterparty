@@ -410,6 +410,20 @@ img{display:block;width:100%}button,input,textarea{font:inherit}button{cursor:po
       row.append(term, detail);
       summary.append(row);
     }
+    // 送信ID：送信結果が確認できるまで端末に保存し、再読み込み後の再送でも同じIDを使う（二重登録防止）
+    const PENDING_KEY = 'rsvpPending';
+    const newId = () => (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID().replace(/-/g, '')
+      : Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+    const readPending = () => { try { return JSON.parse(localStorage.getItem(PENDING_KEY) || 'null'); } catch (e) { return null; } };
+    const writePending = value => { try { value ? localStorage.setItem(PENDING_KEY, JSON.stringify(value)) : localStorage.removeItem(PENDING_KEY); } catch (e) {} };
+    function idFor(name, kana) {
+      const pending = readPending();
+      if (pending && pending.id && pending.name === name && pending.kana === kana) return pending.id;
+      const id = newId();
+      writePending({ id, name, kana });
+      return id;
+    }
     form.addEventListener('submit', async event => {
       event.preventDefault();
       if (submitButton.disabled) return;
@@ -435,14 +449,34 @@ img{display:block;width:100%}button,input,textarea{font:inherit}button{cursor:po
         attendance: formData.get('attendance'),
         allergy: formData.get('allergy'),
         allergyDetail: form.elements.allergy.value === 'あり' ? String(formData.get('allergyDetail')).trim() : '',
-        submittedAt: new Date().toISOString()
+        submittedAt: new Date().toISOString(),
+        id: ''
       };
+      data.id = idFor(data.name, data.kana);
       errorMessage.hidden = true;
       submitButton.disabled = true;
       submitButton.textContent = '送信中…';
       try {
         if (CONFIG.endpoint) {
-          await fetch(CONFIG.endpoint, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+          const controller = 'AbortController' in window ? new AbortController() : null;
+          const timer = controller ? setTimeout(() => controller.abort(), 25000) : null;
+          let result = null;
+          try {
+            const response = await fetch(CONFIG.endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(data),
+              signal: controller ? controller.signal : undefined
+            });
+            result = await response.json();
+          } finally {
+            if (timer) clearTimeout(timer);
+          }
+          if (!result || result.ok !== true) {
+            const reason = result && result.error;
+            throw new Error(reason || 'save_failed');
+          }
+          writePending(null);
         } else {
           console.log('RSVP demo submission:', data);
           document.getElementById('complete-note').textContent = 'デモモードのため、回答は保存されていません。';
@@ -464,6 +498,9 @@ img{display:block;width:100%}button,input,textarea{font:inherit}button{cursor:po
         updateFixedCta();
       } catch (error) {
         console.error('RSVP submission failed:', error);
+        errorMessage.textContent = (error && error.message === 'missing_allergy_detail')
+          ? 'アレルギーの内容を入力してください。'
+          : '送信できませんでした。通信状況をご確認のうえ、もう一度「お返事を送る」を押してください（二重に登録されることはありません）。';
         errorMessage.hidden = false;
         submitButton.disabled = false;
         submitButton.textContent = 'お返事を送る ↗';
@@ -488,15 +525,11 @@ img{display:block;width:100%}button,input,textarea{font:inherit}button{cursor:po
     (function(){
       if(!CONFIG.contact){var c=document.getElementById('contact-block');if(c)c.hidden=true;}
       var g=document.getElementById('gallery');if(!g)return;
-      var imgs=[].slice.call(g.querySelectorAll('img'));var left=imgs.length,ok=0;
       g.hidden=true;
-      function done(){if(--left===0&&ok>0)g.hidden=false;}
-      imgs.forEach(function(im){
-        if(im.complete&&im.getAttribute('src')){if(im.naturalWidth>0)ok++;done();return;}
-        if(!im.getAttribute('src')){done();return;}
-        im.addEventListener('load',function(){ok++;done();});
-        im.addEventListener('error',done);
-      });
+      var srcs=[].slice.call(g.querySelectorAll('img')).map(function(im){return im.getAttribute('src');}).filter(Boolean);
+      var left=srcs.length,ok=0;
+      function done(){if(--left===0&&ok===srcs.length&&ok>0){g.hidden=false;}}
+      srcs.forEach(function(src){var p=new Image();p.onload=function(){ok++;done();};p.onerror=done;p.src=src;});
     })();
   </script>
 </body>
