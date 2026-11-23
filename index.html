@@ -513,7 +513,15 @@ img{display:block;width:100%}button,input,textarea{font:inherit}button{cursor:po
       v.muted=true;v.defaultMuted=true;v.loop=true;v.setAttribute('muted','');v.setAttribute('playsinline','');
       var box=v.parentElement;v.addEventListener('playing',function(){box.classList.add('is-playing');});
       // 低電力モードなどで動画の自動再生が止められたときは、動く画像（WebP）に差し替える
-      var anim=false;function useAnim(){if(anim||!v.paused)return;anim=true;var im=new Image();im.alt='';im.decoding='async';im.onload=function(){box.classList.add('is-anim');};im.src='media/hero-anim.webp';box.insertBefore(im,v);}
+      // まず iPhone(Safari) が画像として滑らかに流せる MP4 を試し、動かなければ WebP にする
+      var anim=false,WEBP='media/hero-anim.webp';
+      function useAnim(){if(anim||!v.paused)return;anim=true;var im=new Image(),tried=false;im.alt='';
+        im.onerror=function(){if(!tried){tried=true;im.src=WEBP;}};
+        im.onload=function(){box.classList.add('is-anim');if(!tried)setTimeout(function(){checkMoving(im);},300);};
+        im.src='media/hero-bg.mp4';box.insertBefore(im,v);
+        function checkMoving(img){var a=snap(img);setTimeout(function(){var b=snap(img);if(!a||!b||a===b){tried=true;img.src=WEBP;}},1500);}
+        function snap(img){try{var c=document.createElement('canvas');c.width=c.height=12;var x=c.getContext('2d');x.drawImage(img,0,0,12,12);return Array.prototype.join.call(x.getImageData(0,0,12,12).data);}catch(e){return '';}}
+      }
       function play(){if(!v.paused)return;var p=v.play();if(p&&p.catch)p.catch(function(err){box.classList.remove('is-playing');if(err&&err.name==='NotAllowedError')useAnim();});}
       setTimeout(function(){if(v.paused&&v.readyState>=2)useAnim();},4000);
       v.addEventListener('ended',function(){v.currentTime=0;play();});
